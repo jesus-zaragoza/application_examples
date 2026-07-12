@@ -10,7 +10,6 @@ if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
 import streamlit as st  # noqa: E402
-
 from src.dummy_app.chart import build_chart_data  # noqa: E402
 
 # Streamlit page setup.
