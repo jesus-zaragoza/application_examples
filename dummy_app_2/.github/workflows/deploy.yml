@@ -27,6 +27,7 @@ permissions:
 
 jobs:
   deploy:
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.target || github.ref_name }}
     uses: ./.github/workflows/deploy-app.yml
     with:
       app_path: dummy_app_2
