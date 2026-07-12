@@ -27,7 +27,6 @@ permissions:
 
 jobs:
   deploy:
-    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.target || github.ref_name }}
     uses: ./.github/workflows/deploy-app.yml
     with:
       app_path: dummy_app_1
@@ -36,8 +35,4 @@ jobs:
       app_url: ${{ vars.DUMMY_APP_1_URL }}
       git_ref: ${{ github.event_name == 'workflow_dispatch' && inputs.git_ref || '' }}
       target: ${{ github.event_name == 'workflow_dispatch' && inputs.target || '' }}
-    secrets:
-      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
-      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
-      GH_PAT: ${{ secrets.GH_PAT }}
+    secrets: inherit
