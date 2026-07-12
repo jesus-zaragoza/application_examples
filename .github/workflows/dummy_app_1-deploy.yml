@@ -7,11 +7,14 @@ on:
       - prod
     paths:
       - "dummy_app_1/**"
+      - ".github/workflows/deploy-app.yml"
+      - ".github/workflows/dummy_app_1-deploy.yml"
+      - ".github/workflows/dummy_app_1-validate.yml"
   workflow_dispatch:
     inputs:
       target:
         description: Environment to deploy (defaults to current branch if run from staging/prod).
-        required: false
+        required: true
         type: choice
         options:
           - staging

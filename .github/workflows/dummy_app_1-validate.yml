@@ -7,6 +7,9 @@ on:
       - prod
     paths:
       - "dummy_app_1/**"
+      - ".github/workflows/deploy-app.yml"
+      - ".github/workflows/dummy_app_1-validate.yml"
+      - ".github/workflows/dummy_app_1-deploy.yml"
   workflow_dispatch:
 
 permissions:
@@ -44,6 +47,7 @@ jobs:
 
   bundle-validate-staging:
     name: Validate staging bundle
+    if: github.event_name == 'workflow_dispatch' || github.base_ref == 'staging'
     needs: python-quality
     runs-on: ubuntu-latest
     environment: staging
@@ -54,6 +58,7 @@ jobs:
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
       DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+      BUNDLE_VAR_workspace_host: ${{ secrets.DATABRICKS_HOST }}
     steps:
       - uses: actions/checkout@v5
         with:

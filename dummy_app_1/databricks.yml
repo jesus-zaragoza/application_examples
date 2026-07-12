@@ -22,6 +22,9 @@ sync:
     - .databricks/**
 
 variables:
+  workspace_host:
+    description: Databricks workspace URL for the current deployment target.
+
   app_name:
     description: Databricks App name for the current deployment target.
 
@@ -94,7 +97,7 @@ targets:
   staging:
     mode: production
     workspace:
-      host: https://fevm-serverless-stable-2xts9s.cloud.databricks.com
+      host: ${var.workspace_host}
       root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
     variables:
       app_name: dummy-app-1-staging
@@ -109,7 +112,7 @@ targets:
   prod:
     mode: production
     workspace:
-      host: https://fevm-serverless-stable-xdrdj3.cloud.databricks.com
+      host: ${var.workspace_host}
       root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
     variables:
       app_name: dummy-app-1-prod
