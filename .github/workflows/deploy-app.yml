@@ -1,0 +1,171 @@
+name: Reusable Databricks App Deploy
+
+on:
+  workflow_call:
+    inputs:
+      app_path:
+        description: Path to the app folder relative to the repository root.
+        required: true
+        type: string
+      github_environment:
+        description: GitHub environment name (matches the deployment branch).
+        required: true
+        type: string
+      target:
+        description: Databricks bundle target to deploy (staging or prod).
+        required: true
+        type: string
+      bundle_resource_key:
+        description: App resource key under resources.apps in databricks.yml.
+        required: true
+        type: string
+      app_name:
+        description: Databricks App name for the selected environment.
+        required: true
+        type: string
+      app_url:
+        description: Optional app URL used for post-deploy smoke testing.
+        required: false
+        default: ""
+        type: string
+      git_ref:
+        description: Branch, tag, or SHA to deploy.
+        required: false
+        default: ""
+        type: string
+    secrets:
+      DATABRICKS_HOST:
+        required: true
+      DATABRICKS_CLIENT_ID:
+        required: true
+      DATABRICKS_CLIENT_SECRET:
+        required: true
+      GH_PAT:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.app_name }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.github_environment }}
+    concurrency:
+      group: ${{ inputs.app_name }}
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: ${{ inputs.app_path }}
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+
+      BUNDLE_TARGET: ${{ inputs.target }}
+      BUNDLE_RESOURCE_KEY: ${{ inputs.bundle_resource_key }}
+      APP_NAME: ${{ inputs.app_name }}
+      APP_URL: ${{ inputs.app_url }}
+      DEPLOY_GIT_REF: ${{ inputs.git_ref != '' && inputs.git_ref || github.ref_name }}
+      APP_VERSION: ${{ github.sha }}
+    steps:
+      - name: Checkout requested ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_GIT_REF }}
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Configure git credentials for Databricks bundle
+        run: |
+          git config --global credential.helper store
+          git config --global user.email "ci-bot@example.com"
+          git config --global user.name "Databricks CI Bot"
+          echo "https://x-access-token:${{ secrets.GH_PAT }}@github.com" \
+            >> ~/.git-credentials
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Install application and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Validate bundle for the target
+        run: |
+          databricks bundle validate -t "${BUNDLE_TARGET}" \
+            --var "app_version=${APP_VERSION}" \
+            --var "git_branch=${DEPLOY_GIT_REF}"
+
+      - name: Bind bundle to existing app when present
+        run: |
+          echo "Databricks CLI version:"
+          databricks version
+
+          if ! databricks apps get "${APP_NAME}" --output JSON > /dev/null 2>&1; then
+            echo "App '${APP_NAME}' does not exist yet. Bundle will CREATE it fresh."
+            exit 0
+          fi
+
+          echo "App '${APP_NAME}' already exists. Binding bundle resource '${BUNDLE_RESOURCE_KEY}'."
+
+          BIND_OUT=$(databricks bundle deployment bind "${BUNDLE_RESOURCE_KEY}" "${APP_NAME}" \
+            -t "${BUNDLE_TARGET}" --auto-approve 2>&1)
+          BIND_CODE=$?
+
+          echo "bind output (exit ${BIND_CODE}):"
+          echo "${BIND_OUT}"
+
+          if [ "${BIND_CODE}" -eq 0 ]; then
+            echo "Bind succeeded."
+          elif echo "${BIND_OUT}" | grep -qiE "already|imported|exists|bound"; then
+            echo "App already bound to this bundle. Proceeding."
+          else
+            echo "bundle deployment bind failed. Run locally once:"
+            echo "  cd ${{ inputs.app_path }}"
+            echo "  databricks bundle deployment bind ${BUNDLE_RESOURCE_KEY} ${APP_NAME} \\"
+            echo "    --target ${BUNDLE_TARGET} --auto-approve"
+            exit 1
+          fi
+
+      - name: Deploy bundle
+        run: |
+          databricks bundle deploy -t "${BUNDLE_TARGET}" \
+            --var "app_version=${APP_VERSION}" \
+            --var "git_branch=${DEPLOY_GIT_REF}"
+
+      - name: Create active app deployment
+        run: |
+          databricks bundle run "${BUNDLE_RESOURCE_KEY}" -t "${BUNDLE_TARGET}"
+
+      - name: Verify app reached RUNNING state
+        run: |
+          echo "Polling app '${APP_NAME}' status..."
+          for i in $(seq 1 30); do
+            STATE=$(databricks apps get "${APP_NAME}" --output json \
+              | python -c "import sys,json;d=json.load(sys.stdin);print(d.get('compute_status',{}).get('state', d.get('app_status',{}).get('state','UNKNOWN')))" 2>/dev/null || echo "UNKNOWN")
+            echo "  attempt ${i}: state=${STATE}"
+            case "${STATE}" in
+              RUNNING|ACTIVE) echo "App is running."; exit 0 ;;
+              ERROR|FAILED|CRASHED) echo "App entered a failure state: ${STATE}"; break ;;
+            esac
+            sleep 10
+          done
+          databricks apps get "${APP_NAME}" --output json || true
+          exit 1
+
+      - name: Print deployed bundle summary
+        if: always()
+        run: databricks bundle summary -t "${BUNDLE_TARGET}"
+
+      - name: Run post-deploy smoke tests
+        if: ${{ inputs.app_url != '' }}
+        env:
+          APP_URL: ${{ inputs.app_url }}
+          EXPECT_TEXT: Dummy App Ready
+        run: pytest tests/integration -q

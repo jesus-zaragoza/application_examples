@@ -1,0 +1,6 @@
+# CI and developer workstation dependencies.
+pytest~=8.3.3
+requests~=2.32.3
+ruff~=0.6.9
+# Databricks Python SDK — used by the CI/CD Repos-sync step and integration helpers.
+databricks-sdk>=0.30.0

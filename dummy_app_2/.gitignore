@@ -1,0 +1,15 @@
+# Databricks CLI state.
+.databricks/
+
+# Python environments and caches.
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+
+# Local build artifacts.
+build/
+dist/
+*.egg-info/

@@ -1,0 +1,6 @@
+# Top-level bundle permissions.
+# Keep a bootstrap manager so the app can still be administered even if group mapping changes.
+
+permissions:
+  - level: CAN_MANAGE
+    user_name: manish_solanki@eisai.com

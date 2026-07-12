@@ -1,0 +1,8 @@
+# Lightweight repository metadata kept for documentation and future scaffolding use.
+version: 1
+name: dummy-app
+description: Enterprise CI/CD managed Databricks App.
+owners:
+  - manish_solanki@eisai.com
+lifecycle:
+  branch_flow: feature -> dev -> main

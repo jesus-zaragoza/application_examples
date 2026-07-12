@@ -1,0 +1,121 @@
+# Root Databricks Asset Bundle configuration for dummy_app_1.
+# Each app in the monorepo has its own bundle file and unique bundle name.
+
+bundle:
+  name: dummy-app-1
+
+include:
+  - resources/*.yml
+
+sync:
+  include:
+    - app.py
+    - app.yaml
+    - requirements.txt
+    - src/**
+  exclude:
+    - tests/**
+    - scripts/**
+    - "**/__pycache__/**"
+    - "**/*.pyc"
+    - .venv/**
+    - .databricks/**
+
+variables:
+  app_name:
+    description: Databricks App name for the current deployment target.
+
+  environment_name:
+    description: Friendly environment name exposed to the application.
+
+  app_version:
+    description: Version string stamped into the app at deploy time.
+    default: local
+
+  git_branch:
+    description: Branch or tag associated with the deployment.
+    default: local
+
+  developer_suffix:
+    description: Short user identifier used for uncontrolled dev app names.
+    default: ${workspace.current_user.short_name}
+
+  app_admin_group:
+    description: Group that can manage the deployed app.
+    default: dummy-app-admins
+
+  app_user_group:
+    description: Group that can use the deployed app.
+    default: users
+
+  uc_catalog:
+    description: Unity Catalog catalog used by the app.
+    default: sandbox
+
+  uc_schema:
+    description: Unity Catalog schema used by the app.
+    default: aact
+
+  serving_endpoint_name:
+    description: Optional serving endpoint queried by the app.
+    default: ""
+
+  vector_search_endpoint_name:
+    description: Optional AI Search endpoint used by the app.
+    default: ""
+
+  ai_gateway_route:
+    description: Optional AI Gateway route or endpoint name.
+    default: ""
+
+  log_level:
+    description: Application log level.
+    default: INFO
+
+targets:
+  # Uncontrolled: personal feature-branch testing from Databricks Repos.
+  # Each developer gets an isolated app name and bundle path in the dev workspace.
+  dev:
+    default: true
+    mode: development
+    workspace:
+      host: https://eisai-lakehouse-us-dev.cloud.databricks.com
+      root_path: ~/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      app_name: dummy-app-1-${var.developer_suffix}
+      environment_name: dev
+      uc_catalog: dev_catalog
+      uc_schema: dev_schama
+      app_admin_group: dummy-app-admins-dev
+      app_user_group: dummy-app-users-dev
+      log_level: DEBUG
+
+  # Controlled: integrated staging baseline deployed from the staging branch.
+  staging:
+    mode: production
+    workspace:
+      host: https://eisai-lakehouse-us-dev.cloud.databricks.com
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      app_name: dummy-app-1-staging
+      environment_name: staging
+      uc_catalog: dev_catalog
+      uc_schema: dev_schama
+      app_admin_group: dummy-app-admins-dev
+      app_user_group: dummy-app-users-dev
+      log_level: DEBUG
+
+  # Controlled: production deployment from the prod branch.
+  prod:
+    mode: production
+    workspace:
+      host: https://eisai-lakehouse-us-prod.cloud.databricks.com
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      app_name: dummy-app-1-prod
+      environment_name: prod
+      uc_catalog: prod_catalog
+      uc_schema: prod_schema
+      app_admin_group: dummy-app-admins-prod
+      app_user_group: dummy-app-users-prod
+      log_level: INFO

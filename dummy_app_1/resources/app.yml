@@ -1,0 +1,48 @@
+# Databricks App resource definition.
+# The app name is parameterized so the same bundle can deploy to dev and prod safely.
+
+resources:
+  apps:
+    dummy_app:
+      # The app name differs by target: dummy-app-dev in development, dummy-app-prod in production.
+      name: ${var.app_name}
+
+      # Friendly description visible in the Databricks Apps UI.
+      description: Enterprise-managed dummy Databricks App deployed through GitHub Actions.
+
+      # Source code path is the bundle-deployed files directory (${workspace.file_path}
+      # = <root_path>/files). bundle deploy syncs app.py, app.yaml, requirements.txt,
+      # and src/** here based on the sync: block in databricks.yml, then the app runtime
+      # serves from this copy. This is identical for dev and prod, so the deployment is
+      # fully portable — it never depends on a hardcoded Repos path or a specific branch.
+      source_code_path: ${workspace.file_path}
+
+      config:
+        # Runtime environment variables injected into the application at deploy time.
+        # The process command itself stays in app.yaml so developers can run it locally too.
+        #
+        # NOTE: Only include env vars with guaranteed non-empty values here.
+        # The Databricks Apps API rejects entries where `value` resolves to null or "".
+        # Optional resource references (serving endpoints, vector search, AI gateway)
+        # are read via os.getenv(..., "") in app.py — add them here only once
+        # real endpoint names are configured in the target variables.
+        env:
+          - name: APP_ENV
+            value: ${var.environment_name}
+          - name: APP_VERSION
+            value: ${var.app_version}
+          - name: GIT_BRANCH
+            value: ${var.git_branch}
+          - name: UC_CATALOG
+            value: ${var.uc_catalog}
+          - name: UC_SCHEMA
+            value: ${var.uc_schema}
+          - name: APP_LOG_LEVEL
+            value: ${var.log_level}
+
+      # Resource-specific permissions keep app access explicit and least-privileged.
+      permissions:
+        - level: CAN_MANAGE
+          group_name: ${var.app_admin_group}
+        - level: CAN_USE
+          group_name: ${var.app_user_group}

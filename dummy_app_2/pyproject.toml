@@ -1,0 +1,24 @@
+# Shared Python tooling configuration for local development and GitHub Actions.
+
+[tool.ruff]
+# Keep line length readable in notebooks, apps, and CI logs.
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# E/F cover pycodestyle + pyflakes, I sorts imports, B catches common bugs, UP modernizes syntax.
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+# Run tests from the dedicated tests tree and keep output concise but actionable.
+addopts = "-ra"
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+  "integration: marks tests that require a deployed application or environment-specific connectivity",
+]
