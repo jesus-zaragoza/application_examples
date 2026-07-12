@@ -62,7 +62,7 @@ jobs:
       APP_VERSION: ${{ github.sha }}
     steps:
       - name: Checkout requested ref
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ env.DEPLOY_GIT_REF }}
           token: ${{ secrets.GH_PAT }}
@@ -76,7 +76,7 @@ jobs:
             >> ~/.git-credentials
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 

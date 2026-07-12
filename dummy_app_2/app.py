@@ -22,9 +22,7 @@ app_version = os.getenv("APP_VERSION", "local")
 git_branch = os.getenv("GIT_BRANCH", "local")
 
 st.title("Dummy App Ready")
-st.caption(
-    f"Environment: {app_env} | Version: {app_version[:7]} | Branch: {git_branch}"
-)
+st.caption(f"Environment: {app_env} | Version: {app_version[:7]} | Branch: {git_branch}")
 st.success("CI/CD Deployment Test: Dummy App Ready")
 
 # Simple visual payload so the app still has a meaningful interactive surface.
