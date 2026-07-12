@@ -58,7 +58,6 @@ jobs:
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
       DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
-      BUNDLE_VAR_workspace_host: ${{ secrets.DATABRICKS_HOST }}
     steps:
       - uses: actions/checkout@v5
         with:

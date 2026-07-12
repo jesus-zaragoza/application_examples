@@ -53,7 +53,6 @@ jobs:
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
       DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
-      BUNDLE_VAR_workspace_host: ${{ secrets.DATABRICKS_HOST }}
 
       BUNDLE_TARGET: ${{ inputs.target != '' && inputs.target || github.ref_name }}
       BUNDLE_RESOURCE_KEY: ${{ inputs.bundle_resource_key }}

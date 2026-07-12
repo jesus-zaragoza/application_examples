@@ -22,9 +22,6 @@ sync:
     - .databricks/**
 
 variables:
-  workspace_host:
-    description: Databricks workspace URL for the current deployment target.
-
   app_name:
     description: Databricks App name for the current deployment target.
 
@@ -97,7 +94,6 @@ targets:
   staging:
     mode: production
     workspace:
-      host: ${var.workspace_host}
       root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
     variables:
       app_name: dummy-app-2-staging
@@ -112,7 +108,6 @@ targets:
   prod:
     mode: production
     workspace:
-      host: ${var.workspace_host}
       root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
     variables:
       app_name: dummy-app-2-prod
