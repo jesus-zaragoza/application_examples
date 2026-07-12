@@ -7,14 +7,6 @@ on:
         description: Path to the app folder relative to the repository root.
         required: true
         type: string
-      github_environment:
-        description: GitHub environment name (matches the deployment branch).
-        required: true
-        type: string
-      target:
-        description: Databricks bundle target to deploy (staging or prod).
-        required: true
-        type: string
       bundle_resource_key:
         description: App resource key under resources.apps in databricks.yml.
         required: true
@@ -29,7 +21,16 @@ on:
         default: ""
         type: string
       git_ref:
-        description: Branch, tag, or SHA to deploy.
+        description: Branch, tag, or SHA to deploy. Defaults to the triggering branch.
+        required: false
+        default: ""
+        type: string
+      target:
+        description: >-
+          Optional override for the bundle target and GitHub environment.
+          Defaults to the branch name (e.g. staging, prod). Only needed for
+          workflow_dispatch when deploying to an environment other than the
+          current branch.
         required: false
         default: ""
         type: string
@@ -50,7 +51,7 @@ jobs:
   deploy:
     name: Deploy ${{ inputs.app_name }}
     runs-on: ubuntu-latest
-    environment: ${{ inputs.github_environment }}
+    environment: ${{ inputs.target != '' && inputs.target || github.ref_name }}
     concurrency:
       group: ${{ inputs.app_name }}
       cancel-in-progress: false
@@ -62,7 +63,7 @@ jobs:
       DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
       DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
 
-      BUNDLE_TARGET: ${{ inputs.target }}
+      BUNDLE_TARGET: ${{ inputs.target != '' && inputs.target || github.ref_name }}
       BUNDLE_RESOURCE_KEY: ${{ inputs.bundle_resource_key }}
       APP_NAME: ${{ inputs.app_name }}
       APP_URL: ${{ inputs.app_url }}

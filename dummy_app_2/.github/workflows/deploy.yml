@@ -1,0 +1,42 @@
+name: Deploy dummy_app_2
+
+on:
+  push:
+    branches:
+      - staging
+      - prod
+    paths:
+      - "dummy_app_2/**"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Environment to deploy (defaults to current branch if run from staging/prod).
+        required: false
+        type: choice
+        options:
+          - staging
+          - prod
+      git_ref:
+        description: Branch, tag, or SHA to deploy. Defaults to the current branch.
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy-app.yml
+    with:
+      app_path: dummy_app_2
+      bundle_resource_key: dummy_app
+      app_name: dummy-app-2-${{ github.event_name == 'workflow_dispatch' && inputs.target || github.ref_name }}
+      app_url: ${{ vars.DUMMY_APP_2_URL }}
+      git_ref: ${{ github.event_name == 'workflow_dispatch' && inputs.git_ref || '' }}
+      target: ${{ github.event_name == 'workflow_dispatch' && inputs.target || '' }}
+    secrets:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+      GH_PAT: ${{ secrets.GH_PAT }}

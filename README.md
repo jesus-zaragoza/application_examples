@@ -11,22 +11,28 @@ This repository demonstrates how to manage **multiple Databricks Apps in a singl
 application_examples/
 ├── .github/
 │   └── workflows/
-│       ├── deploy-app.yml    # Reusable deploy workflow (one app)
-│       ├── deploy.yml        # Branch-triggered multi-app deploy
-│       └── validate.yml      # PR validation across apps
+│       ├── deploy-app.yml           # Shared reusable deploy workflow
+│       ├── dummy_app_1-deploy.yml   # Symlink → dummy_app_1/.github/workflows/deploy.yml
+│       ├── dummy_app_1-validate.yml # Symlink → dummy_app_1/.github/workflows/validate.yml
+│       ├── dummy_app_2-deploy.yml   # Symlink → dummy_app_2/.github/workflows/deploy.yml
+│       └── dummy_app_2-validate.yml # Symlink → dummy_app_2/.github/workflows/validate.yml
 ├── dummy_app_1/
+│   ├── .github/workflows/
+│   │   ├── deploy.yml
+│   │   └── validate.yml
 │   ├── databricks.yml
-│   ├── resources/
-│   ├── app.py
 │   └── ...
 └── dummy_app_2/
+    ├── .github/workflows/
+    │   ├── deploy.yml
+    │   └── validate.yml
     ├── databricks.yml
-    ├── resources/
-    ├── app.py
     └── ...
 ```
 
-Each app folder is a self-contained Databricks bundle. Workflows live **once at the repository root** and parameterize the app path.
+Each app owns its own workflow files under `<app>/.github/workflows/`. GitHub only discovers workflows from the repository root, so thin **symlinks** in `.github/workflows/` point to each app's workflow files.
+
+Changes under `dummy_app_1/` only trigger `dummy_app_1` workflows. Changes under `dummy_app_2/` only trigger `dummy_app_2` workflows. Neither app deploys when the other changes.
 
 ## Branch and environment model
 
@@ -36,13 +42,15 @@ Each app folder is a self-contained Databricks bundle. Workflows live **once at 
 | `staging` | `staging` | Dev | GitHub Actions (auto on push) | `dummy-app-{N}-staging` |
 | `prod` | `prod` | Production | GitHub Actions (auto on push) | `dummy-app-{N}-prod` |
 
-The **branch name equals the bundle target** for controlled environments. That keeps workflow YAML simple:
+The **branch name equals the bundle target and GitHub Environment** for controlled deployments. `deploy-app.yml` derives all three from `github.ref_name` automatically:
 
 ```yaml
-target: ${{ github.ref_name }}           # staging or prod
-github_environment: ${{ github.ref_name }} # maps to GitHub Environment secrets
-app_name: dummy-app-${{ matrix.app_id }}-${{ github.ref_name }}
+# Inside deploy-app.yml — no target input needed on push
+BUNDLE_TARGET: ${{ inputs.target != '' && inputs.target || github.ref_name }}
+environment:   ${{ inputs.target != '' && inputs.target || github.ref_name }}
 ```
+
+On push to `staging` or `prod`, no target configuration is passed — the branch name is used directly.
 
 ### Controlled environments (staging + prod)
 
@@ -105,27 +113,20 @@ Store these as **environment secrets** (not repository secrets) so staging and p
 
 ## Workflows
 
-### `validate.yml`
+### Per-app workflows
 
-Runs on pull requests to `staging` or `prod`:
+Each app has its own `deploy.yml` and `validate.yml` under `<app>/.github/workflows/`:
 
-- Detects which app folders changed (only validates affected apps)
-- Runs lint, format check, and unit tests per app
-- Validates the `staging` bundle target for all PRs
-- Also validates `prod` when the PR targets the `prod` branch
+| App | Deploy workflow | Validate workflow | Path filter |
+| --- | --- | --- | --- |
+| `dummy_app_1` | `dummy_app_1/.github/workflows/deploy.yml` | `dummy_app_1/.github/workflows/validate.yml` | `dummy_app_1/**` |
+| `dummy_app_2` | `dummy_app_2/.github/workflows/deploy.yml` | `dummy_app_2/.github/workflows/validate.yml` | `dummy_app_2/**` |
 
-### `deploy.yml`
+Both deploy and validate workflows use `paths` filters so **only changes within that app's folder** trigger the workflow. A push to `staging` that only touches `dummy_app_1/` deploys `dummy-app-1-staging` and leaves `dummy_app_2` untouched.
 
-Runs on push to `staging` or `prod`:
+### Shared `deploy-app.yml`
 
-- Detects which apps changed (deploys only affected apps unless `.github/` changed)
-- Calls the reusable `deploy-app.yml` once per app
-- Uses the branch name as both the bundle target and GitHub Environment
-- Supports manual `workflow_dispatch` with target and optional single-app selection
-
-### `deploy-app.yml`
-
-Reusable workflow that deploys one app folder:
+Reusable workflow at `.github/workflows/deploy-app.yml` called by each app's `deploy.yml`:
 
 1. Checkout
 2. Validate bundle
@@ -135,15 +136,20 @@ Reusable workflow that deploys one app folder:
 6. Poll until RUNNING
 7. Optional smoke test
 
-All bundle commands run with `working-directory` set to the app path (e.g. `dummy_app_1`).
+All bundle commands run with `working-directory` set to the app path.
 
 ## Adding a new app
 
 1. Create a new folder (e.g. `my_new_app/`) with its own `databricks.yml`, `app.py`, `app.yaml`, and `resources/`
 2. Use a unique bundle name: `bundle.name: my-new-app`
 3. Follow the naming convention: `my-new-app-staging`, `my-new-app-prod`, `my-new-app-{user}` for dev
-4. Add the app to the `prepare` job in `.github/workflows/deploy.yml` and `validate.yml`
-5. Add an optional `MY_NEW_APP_URL` environment variable for smoke tests
+4. Copy `dummy_app_1/.github/workflows/` as a template and update the app path, app name, and path filters
+5. Create symlinks in `.github/workflows/`:
+   ```bash
+   ln -s ../../my_new_app/.github/workflows/deploy.yml .github/workflows/my_new_app-deploy.yml
+   ln -s ../../my_new_app/.github/workflows/validate.yml .github/workflows/my_new_app-validate.yml
+   ```
+6. Add an optional `MY_NEW_APP_URL` environment variable for smoke tests
 
 ## App naming convention
 
@@ -158,7 +164,7 @@ All bundle commands run with `working-directory` set to the app path (e.g. `dumm
 
 - Require pull request before merge
 - Require at least 1 approval
-- Require `Validate Databricks App Bundles` status check
+- Require `Validate dummy_app_1` or `Validate dummy_app_2` status check (whichever app the PR touches)
 
 **`prod`**
 

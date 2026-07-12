@@ -1,7 +1,7 @@
 # dummy_app_2
 
-> **CI/CD workflows** for this repository live at the **repository root** in `.github/workflows/`.
-> See the [root README](../README.md) for the monorepo deployment model (staging/prod branches, multi-app matrix, GitHub Environments).
+> **CI/CD workflows** for this app live in [`dummy_app_2/.github/workflows/`](.github/workflows/).
+> See the [root README](../README.md) for the monorepo deployment model.
 
 ## 1. High-level architecture diagram (ASCII)
 
