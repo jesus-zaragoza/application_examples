@@ -1,1 +1,94 @@
-../../dummy_app_1/.github/workflows/validate.yml
+name: Validate dummy_app_1
+
+on:
+  pull_request:
+    branches:
+      - staging
+      - prod
+    paths:
+      - "dummy_app_1/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-quality:
+    name: Lint, format, and unit test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dummy_app_1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Check formatting
+        run: ruff format --check .
+
+      - name: Run lint rules
+        run: ruff check .
+
+      - name: Run unit tests
+        run: pytest tests/unit -q
+
+  bundle-validate-staging:
+    name: Validate staging bundle
+    needs: python-quality
+    runs-on: ubuntu-latest
+    environment: staging
+    defaults:
+      run:
+        working-directory: dummy_app_1
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - uses: databricks/setup-cli@main
+
+      - name: Validate staging bundle
+        run: |
+          databricks bundle validate -t staging \
+            --var "app_version=validation" \
+            --var "git_branch=${{ github.head_ref || github.ref_name }}"
+
+  bundle-validate-prod:
+    name: Validate prod bundle
+    if: github.event_name == 'workflow_dispatch' || github.base_ref == 'prod'
+    needs: python-quality
+    runs-on: ubuntu-latest
+    environment: prod
+    defaults:
+      run:
+        working-directory: dummy_app_1
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - uses: databricks/setup-cli@main
+
+      - name: Validate prod bundle
+        run: |
+          databricks bundle validate -t prod \
+            --var "app_version=validation" \
+            --var "git_branch=${{ github.head_ref || github.ref_name }}"

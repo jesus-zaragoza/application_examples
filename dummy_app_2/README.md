@@ -1,6 +1,7 @@
 # dummy_app_2
 
-> **CI/CD workflows** for this app live in [`dummy_app_2/.github/workflows/`](.github/workflows/).
+> **CI/CD workflows** for this app live at the repository root:
+> `.github/workflows/dummy_app_2-deploy.yml` and `dummy_app_2-validate.yml`.
 > See the [root README](../README.md) for the monorepo deployment model.
 
 ## 1. High-level architecture diagram (ASCII)

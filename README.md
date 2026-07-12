@@ -11,28 +11,20 @@ This repository demonstrates how to manage **multiple Databricks Apps in a singl
 application_examples/
 ├── .github/
 │   └── workflows/
-│       ├── deploy-app.yml           # Shared reusable deploy workflow
-│       ├── dummy_app_1-deploy.yml   # Symlink → dummy_app_1/.github/workflows/deploy.yml
-│       ├── dummy_app_1-validate.yml # Symlink → dummy_app_1/.github/workflows/validate.yml
-│       ├── dummy_app_2-deploy.yml   # Symlink → dummy_app_2/.github/workflows/deploy.yml
-│       └── dummy_app_2-validate.yml # Symlink → dummy_app_2/.github/workflows/validate.yml
+│       ├── deploy-app.yml            # Shared reusable deploy workflow
+│       ├── dummy_app_1-deploy.yml    # Deploy workflow for dummy_app_1 only
+│       ├── dummy_app_1-validate.yml  # Validate workflow for dummy_app_1 only
+│       ├── dummy_app_2-deploy.yml    # Deploy workflow for dummy_app_2 only
+│       └── dummy_app_2-validate.yml  # Validate workflow for dummy_app_2 only
 ├── dummy_app_1/
-│   ├── .github/workflows/
-│   │   ├── deploy.yml
-│   │   └── validate.yml
 │   ├── databricks.yml
 │   └── ...
 └── dummy_app_2/
-    ├── .github/workflows/
-    │   ├── deploy.yml
-    │   └── validate.yml
     ├── databricks.yml
     └── ...
 ```
 
-Each app owns its own workflow files under `<app>/.github/workflows/`. GitHub only discovers workflows from the repository root, so thin **symlinks** in `.github/workflows/` point to each app's workflow files.
-
-Changes under `dummy_app_1/` only trigger `dummy_app_1` workflows. Changes under `dummy_app_2/` only trigger `dummy_app_2` workflows. Neither app deploys when the other changes.
+GitHub only loads workflow files from `.github/workflows/` at the **repository root** (symlinks and per-app `.github/` subfolders are not supported). Each app gets its own pair of workflow files at the root, named `<app_folder>-deploy.yml` and `<app_folder>-validate.yml`, with `paths` filters so changes to one app never trigger the other.
 
 ## Branch and environment model
 
@@ -115,12 +107,12 @@ Store these as **environment secrets** (not repository secrets) so staging and p
 
 ### Per-app workflows
 
-Each app has its own `deploy.yml` and `validate.yml` under `<app>/.github/workflows/`:
+Each app has its own deploy and validate workflow files at the repository root:
 
 | App | Deploy workflow | Validate workflow | Path filter |
 | --- | --- | --- | --- |
-| `dummy_app_1` | `dummy_app_1/.github/workflows/deploy.yml` | `dummy_app_1/.github/workflows/validate.yml` | `dummy_app_1/**` |
-| `dummy_app_2` | `dummy_app_2/.github/workflows/deploy.yml` | `dummy_app_2/.github/workflows/validate.yml` | `dummy_app_2/**` |
+| `dummy_app_1` | `.github/workflows/dummy_app_1-deploy.yml` | `.github/workflows/dummy_app_1-validate.yml` | `dummy_app_1/**` |
+| `dummy_app_2` | `.github/workflows/dummy_app_2-deploy.yml` | `.github/workflows/dummy_app_2-validate.yml` | `dummy_app_2/**` |
 
 Both deploy and validate workflows use `paths` filters so **only changes within that app's folder** trigger the workflow. A push to `staging` that only touches `dummy_app_1/` deploys `dummy-app-1-staging` and leaves `dummy_app_2` untouched.
 
@@ -143,13 +135,8 @@ All bundle commands run with `working-directory` set to the app path.
 1. Create a new folder (e.g. `my_new_app/`) with its own `databricks.yml`, `app.py`, `app.yaml`, and `resources/`
 2. Use a unique bundle name: `bundle.name: my-new-app`
 3. Follow the naming convention: `my-new-app-staging`, `my-new-app-prod`, `my-new-app-{user}` for dev
-4. Copy `dummy_app_1/.github/workflows/` as a template and update the app path, app name, and path filters
-5. Create symlinks in `.github/workflows/`:
-   ```bash
-   ln -s ../../my_new_app/.github/workflows/deploy.yml .github/workflows/my_new_app-deploy.yml
-   ln -s ../../my_new_app/.github/workflows/validate.yml .github/workflows/my_new_app-validate.yml
-   ```
-6. Add an optional `MY_NEW_APP_URL` environment variable for smoke tests
+4. Copy `.github/workflows/dummy_app_1-deploy.yml` and `dummy_app_1-validate.yml` as templates; rename to `my_new_app-deploy.yml` / `my_new_app-validate.yml` and update the app path, app name, and path filters
+5. Add an optional `MY_NEW_APP_URL` environment variable for smoke tests
 
 ## App naming convention
 
