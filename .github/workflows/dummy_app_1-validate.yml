@@ -44,6 +44,8 @@ jobs:
             -r requirements.txt \
             -r requirements-dev.txt
 
+          echo "$(pwd)/.venv/bin" >> "$GITHUB_PATH"
+
       - name: Check formatting
         run: ruff format --check .
 
