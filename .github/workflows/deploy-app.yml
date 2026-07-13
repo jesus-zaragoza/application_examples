@@ -115,9 +115,11 @@ jobs:
 
           echo "App '${APP_NAME}' already exists. Binding bundle resource '${BUNDLE_RESOURCE_KEY}'."
 
+          set +e
           BIND_OUT=$(databricks bundle deployment bind "${BUNDLE_RESOURCE_KEY}" "${APP_NAME}" \
             -t "${BUNDLE_TARGET}" --auto-approve 2>&1)
           BIND_CODE=$?
+          set -e
 
           echo "bind output (exit ${BIND_CODE}):"
           echo "${BIND_OUT}"
