@@ -34,15 +34,6 @@ on:
         required: false
         default: ""
         type: string
-    secrets:
-      DATABRICKS_HOST:
-        required: true
-      DATABRICKS_CLIENT_ID:
-        required: true
-      DATABRICKS_CLIENT_SECRET:
-        required: true
-      GH_PAT:
-        required: true
 
 permissions:
   contents: read
@@ -50,7 +41,7 @@ permissions:
 jobs:
   deploy:
     name: Deploy ${{ inputs.app_name }}
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     environment: ${{ inputs.target != '' && inputs.target || github.ref_name }}
     concurrency:
       group: ${{ inputs.app_name }}
@@ -71,7 +62,7 @@ jobs:
       APP_VERSION: ${{ github.sha }}
     steps:
       - name: Checkout requested ref
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ env.DEPLOY_GIT_REF }}
           token: ${{ secrets.GH_PAT }}
@@ -84,18 +75,27 @@ jobs:
           echo "https://x-access-token:${{ secrets.GH_PAT }}@github.com" \
             >> ~/.git-credentials
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+      - name: Verify Python
+        run: |
+          which python3.11
+          python3.11 --version
+
+      - name: Create virtual environment and install dependencies
+        run: |
+          export UV_INDEX_URL=https://pypi-proxy.dev.databricks.com/simple/
+
+          rm -rf .venv
+          python3.11 -m venv .venv
+
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install \
+            -r requirements.txt \
+            -r requirements-dev.txt
+
+          echo "$(pwd)/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Install Databricks CLI
         uses: databricks/setup-cli@main
-
-      - name: Install application and test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Validate bundle for the target
         run: |

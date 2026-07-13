@@ -47,8 +47,8 @@ from pathlib import Path
 # no hardcoded /Workspace/Users/... path that breaks when the branch folder changes.
 BUNDLE_DIR = str(Path(__file__).resolve().parent.parent)
 BUNDLE_TARGET = "dev"
-RESOURCE_KEY = "dummy_app"       # key used in resources/app.yml (resources.apps.dummy_app)
-APP_NAME = "dummy-app-dev"       # name of the existing Databricks App in the dev workspace
+RESOURCE_KEY = "dummy_app"  # key used in resources/app.yml (resources.apps.dummy_app)
+APP_NAME = "dummy-app-dev"  # name of the existing Databricks App in the dev workspace
 # ──────────────────────────────────────────────────────────────────────────────
 
 
@@ -86,9 +86,14 @@ def main() -> None:
     # 3. Run the bind command.
     print(f"\nBinding bundle resource '{RESOURCE_KEY}' → app '{APP_NAME}' …")
     cmd = [
-        "databricks", "bundle", "deployment", "bind",
-        RESOURCE_KEY, APP_NAME,
-        "--target", BUNDLE_TARGET,
+        "databricks",
+        "bundle",
+        "deployment",
+        "bind",
+        RESOURCE_KEY,
+        APP_NAME,
+        "--target",
+        BUNDLE_TARGET,
         "--auto-approve",
     ]
     print(f"Command: {' '.join(cmd)}\n")
@@ -102,8 +107,7 @@ def main() -> None:
     print(f"── exit code: {code} ────────────────────────────────────")
 
     already_bound = any(
-        kw in (out + err).lower()
-        for kw in ("already", "imported", "exists", "bound")
+        kw in (out + err).lower() for kw in ("already", "imported", "exists", "bound")
     )
 
     if code == 0:

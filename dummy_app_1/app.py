@@ -10,7 +10,6 @@ if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
 import streamlit as st  # noqa: E402
-
 from src.dummy_app.chart import build_chart_data  # noqa: E402
 
 # Streamlit page setup.
@@ -22,9 +21,7 @@ app_version = os.getenv("APP_VERSION", "local")
 git_branch = os.getenv("GIT_BRANCH", "local")
 
 st.title("Dummy App Ready")
-st.caption(
-    f"Environment: {app_env} | Version: {app_version[:7]} | Branch: {git_branch}"
-)
+st.caption(f"Environment: {app_env} | Version: {app_version[:7]} | Branch: {git_branch}")
 st.success("CI/CD Deployment Test: Dummy App Ready")
 
 # Simple visual payload so the app still has a meaningful interactive surface.
