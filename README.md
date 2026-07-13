@@ -72,6 +72,8 @@ databricks bundle run dummy_app -t dev
 
 The `dev` target uses `mode: development` with a user-scoped `root_path`, so each developer gets an isolated app named `dummy-app-1-{short_name}` without colliding with teammates.
 
+The `staging` and `prod` targets use the same user-scoped pattern (`/Workspace/Users/<deploy-identity>/.bundle/...`), which resolves to the CI service principal during GitHub Actions runs.
+
 ## GitHub configuration
 
 ### Environments

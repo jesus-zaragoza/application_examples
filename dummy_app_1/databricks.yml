@@ -16,9 +16,6 @@ sync:
   exclude:
     - tests/**
     - scripts/**
-    - "**/__pycache__/**"
-    - "**/*.pyc"
-    - .venv/**
     - .databricks/**
 
 variables:
@@ -94,7 +91,7 @@ targets:
   staging:
     mode: production
     workspace:
-      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
     variables:
       app_name: dummy-app-1-staging
       environment_name: staging
@@ -108,7 +105,7 @@ targets:
   prod:
     mode: production
     workspace:
-      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
     variables:
       app_name: dummy-app-1-prod
       environment_name: prod

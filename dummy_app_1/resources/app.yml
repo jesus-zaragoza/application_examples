@@ -41,8 +41,7 @@ resources:
             value: ${var.log_level}
 
       # Resource-specific permissions keep app access explicit and least-privileged.
+      # app_admin_group CAN_MANAGE is defined at the top-level permissions.yml.
       permissions:
-        - level: CAN_MANAGE
-          group_name: ${var.app_admin_group}
         - level: CAN_USE
           group_name: ${var.app_user_group}
