@@ -27,15 +27,22 @@ jobs:
         with:
           token: ${{ secrets.GH_PAT }}
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
+      - name: Verify Python
+        run: |
+          which python3
+          python3 --version
 
-      - name: Install dependencies
+      - name: Create virtual environment and install dependencies
         run: |
           export UV_INDEX_URL=https://pypi-proxy.dev.databricks.com/simple/
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
+
+          rm -rf .venv
+          python3 -m venv .venv
+
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install \
+            -r requirements.txt \
+            -r requirements-dev.txt
 
       - name: Check formatting
         run: ruff format --check .
