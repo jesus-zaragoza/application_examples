@@ -1,5 +1,4 @@
 import pytest
-
 from src.dummy_app.chart import build_chart_data
 
 

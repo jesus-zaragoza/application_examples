@@ -16,9 +16,6 @@ sync:
   exclude:
     - tests/**
     - scripts/**
-    - "**/__pycache__/**"
-    - "**/*.pyc"
-    - .venv/**
     - .databricks/**
 
 variables:
@@ -79,12 +76,12 @@ targets:
     default: true
     mode: development
     workspace:
-      host: https://eisai-lakehouse-us-dev.cloud.databricks.com
+      host: https://fevm-serverless-stable-2xts9s.cloud.databricks.com
       root_path: ~/.bundle/${bundle.name}/${bundle.target}
     variables:
       app_name: dummy-app-2-${var.developer_suffix}
       environment_name: dev
-      uc_catalog: dev_catalog
+      uc_catalog: accessdemo
       uc_schema: dev_schama
       app_admin_group: dummy-app-admins-dev
       app_user_group: dummy-app-users-dev
@@ -94,12 +91,11 @@ targets:
   staging:
     mode: production
     workspace:
-      host: https://eisai-lakehouse-us-dev.cloud.databricks.com
-      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
     variables:
       app_name: dummy-app-2-staging
       environment_name: staging
-      uc_catalog: dev_catalog
+      uc_catalog: accessdemo
       uc_schema: dev_schama
       app_admin_group: dummy-app-admins-dev
       app_user_group: dummy-app-users-dev
@@ -109,12 +105,11 @@ targets:
   prod:
     mode: production
     workspace:
-      host: https://eisai-lakehouse-us-prod.cloud.databricks.com
-      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
     variables:
       app_name: dummy-app-2-prod
       environment_name: prod
-      uc_catalog: prod_catalog
+      uc_catalog: serverless_stable_xdrdj3_catalog
       uc_schema: prod_schema
       app_admin_group: dummy-app-admins-prod
       app_user_group: dummy-app-users-prod

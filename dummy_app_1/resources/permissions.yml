@@ -2,5 +2,9 @@
 # Keep a bootstrap manager so the app can still be administered even if group mapping changes.
 
 permissions:
+  # Grant the identity running validate/deploy persistent CAN_MANAGE on bundle state.
   - level: CAN_MANAGE
-    user_name: manish_solanki@eisai.com
+    service_principal_name: ${workspace.current_user.userName}
+  # Bootstrap admin group for human operators.
+  - level: CAN_MANAGE
+    group_name: ${var.app_admin_group}

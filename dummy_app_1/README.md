@@ -1,6 +1,7 @@
 # dummy_app_1
 
-> **CI/CD workflows** for this app live in [`dummy_app_1/.github/workflows/`](.github/workflows/).
+> **CI/CD workflows** for this app live at the repository root:
+> `.github/workflows/dummy_app_1-deploy.yml` and `dummy_app_1-validate.yml`.
 > See the [root README](../README.md) for the monorepo deployment model.
 
 ## 1. High-level architecture diagram (ASCII)
@@ -212,8 +213,8 @@ Bundle implementation decisions:
 * `resources/app.yml` contains the Databricks App resource.
 * App name is injected from variables so dev and prod use the same definition safely.
 * `app_version` and `git_branch` are passed by GitHub Actions using `--var` during deploy.
-* `workspace.root_path` is shared instead of user-home scoped so CI/CD is not tied to a specific human identity.
-* Permissions are split between a bootstrap manager and target-based app admin/user groups.
+* `workspace.root_path` for staging/prod uses `/Workspace/Users/${workspace.current_user.userName}/.bundle/...`, so bundle state is owned by the CI service principal (or whoever runs validate/deploy locally), not a world-writable Shared folder.
+* Permissions are split between top-level bundle permissions (deploy identity + admin group) and app-level CAN_USE for the user group.
 
 Environment-specific values belong in these places:
 
