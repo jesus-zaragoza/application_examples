@@ -108,16 +108,18 @@ jobs:
           echo "Databricks CLI version:"
           databricks version
 
-          if ! databricks apps get "${APP_NAME}" --output JSON > /dev/null 2>&1; then
+          if ! databricks apps get "${APP_NAME}" -t "${BUNDLE_TARGET}" --output JSON > /dev/null 2>&1; then
             echo "App '${APP_NAME}' does not exist yet. Bundle will CREATE it fresh."
             exit 0
           fi
 
           echo "App '${APP_NAME}' already exists. Binding bundle resource '${BUNDLE_RESOURCE_KEY}'."
 
+          set +e
           BIND_OUT=$(databricks bundle deployment bind "${BUNDLE_RESOURCE_KEY}" "${APP_NAME}" \
             -t "${BUNDLE_TARGET}" --auto-approve 2>&1)
           BIND_CODE=$?
+          set -e
 
           echo "bind output (exit ${BIND_CODE}):"
           echo "${BIND_OUT}"
@@ -148,7 +150,7 @@ jobs:
         run: |
           echo "Polling app '${APP_NAME}' status..."
           for i in $(seq 1 30); do
-            STATE=$(databricks apps get "${APP_NAME}" --output json \
+            STATE=$(databricks apps get "${APP_NAME}" -t "${BUNDLE_TARGET}" --output json \
               | python -c "import sys,json;d=json.load(sys.stdin);print(d.get('compute_status',{}).get('state', d.get('app_status',{}).get('state','UNKNOWN')))" 2>/dev/null || echo "UNKNOWN")
             echo "  attempt ${i}: state=${STATE}"
             case "${STATE}" in
@@ -157,7 +159,7 @@ jobs:
             esac
             sleep 10
           done
-          databricks apps get "${APP_NAME}" --output json || true
+          databricks apps get "${APP_NAME}" -t "${BUNDLE_TARGET}" --output json || true
           exit 1
 
       - name: Print deployed bundle summary
